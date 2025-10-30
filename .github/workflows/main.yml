@@ -11,14 +11,38 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Build with static Qt
+    - name: Install Qt tools and find qmake
       run: |
-        # Inside dockcross container - already has cross-compiler
-        qmake CliX.pro
-        make -j4
+        # Check what's available
+        which qmake || echo "qmake not found"
+        which x86_64-w64-mingw32.static-qmake-qt5 || echo "cross qmake not found"
         
-    - name: Upload Standalone EXE
+        # List available compilers
+        find /usr/src/mxe/usr -name "*qmake*" -type f 2>/dev/null || echo "No qmake found in MXE"
+        
+        # Try to find any Qt installation
+        find /usr -name "qmake*" -type f 2>/dev/null | head -10 || echo "No system qmake"
+        
+    - name: Try different Qt versions
+      run: |
+        # Try various qmake commands
+        /usr/src/mxe/usr/bin/x86_64-w64-mingw32.static-qmake-qt5 --version || echo "Qt5 qmake not found"
+        /usr/src/mxe/usr/bin/x86_64-w64-mingw32.static-qmake-qt6 --version || echo "Qt6 qmake not found"
+        
+    - name: Build with available tools
+      run: |
+        # Check what compilers are available
+        ls /usr/src/mxe/usr/bin/*g++* || echo "No g++ found"
+        
+        # Try direct compilation as fallback
+        echo "Checking available tools..."
+        /usr/src/mxe/usr/bin/x86_64-w64-mingw32.static-g++ --version || echo "g++ not working"
+        
+    - name: Upload project files for debugging
       uses: actions/upload-artifact@v4
       with:
-        name: CliX-Standalone-Windows
-        path: release/CliX.exe
+        name: Project-Source
+        path: |
+          *.pro
+          *.cpp
+          *.h
