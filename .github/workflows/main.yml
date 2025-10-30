@@ -1,32 +1,24 @@
-name: Build Windows EXE
+name: Build Standalone Windows EXE
 
 on: [push, workflow_dispatch]
 
 jobs:
   build-windows:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+    container: 
+      image: dockcross/windows-static-x64
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Qt
-      uses: actions/setup-qt@v1
-      with:
-        qt-version: '6.5.0'
-        
-    - name: Build Project
+    - name: Build with static Qt
       run: |
+        # Inside dockcross container - already has cross-compiler
         qmake CliX.pro
-        mingw32-make release
+        make -j4
         
-    - name: Deploy dependencies
-      run: |
-        windeployqt --release release/CliX.exe
-        
-    - name: Upload Windows EXE
+    - name: Upload Standalone EXE
       uses: actions/upload-artifact@v4
       with:
-        name: CliX-Windows
-        path: |
-          release/CliX.exe
-          release/*.dll
+        name: CliX-Standalone-Windows
+        path: release/CliX.exe
