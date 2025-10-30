@@ -1,0 +1,11 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+<qresource prefix="/icons">
+    <file>employees.png</file>
+    <file>finances.png</file>
+    <file>payroll.png</file>
+    <file>salary.png</file>
+    <file>schedule.png</file>
+    <file>work.png</file>
+</qresource>
+</RCC>
