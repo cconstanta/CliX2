@@ -11,38 +11,31 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Install Qt tools and find qmake
+    - name: Install build dependencies
       run: |
-        # Check what's available
-        which qmake || echo "qmake not found"
-        which x86_64-w64-mingw32.static-qmake-qt5 || echo "cross qmake not found"
+        # Установим необходимые библиотеки для статической сборки
+        apt-get update
+        apt-get install -y pkg-config
         
-        # List available compilers
-        find /usr/src/mxe/usr -name "*qmake*" -type f 2>/dev/null || echo "No qmake found in MXE"
-        
-        # Try to find any Qt installation
-        find /usr -name "qmake*" -type f 2>/dev/null | head -10 || echo "No system qmake"
-        
-    - name: Try different Qt versions
+    - name: Manual Qt static compilation
       run: |
-        # Try various qmake commands
-        /usr/src/mxe/usr/bin/x86_64-w64-mingw32.static-qmake-qt5 --version || echo "Qt5 qmake not found"
-        /usr/src/mxe/usr/bin/x86_64-w64-mingw32.static-qmake-qt6 --version || echo "Qt6 qmake not found"
+        # Прямая компиляция со статическими библиотеками Qt
+        /usr/src/mxe/usr/bin/x86_64-w64-mingw32.static-g++ \
+          -std=c++11 -O2 -static \
+          -I/usr/src/mxe/usr/x86_64-w64-mingw32.static/include/qt5 \
+          -I/usr/src/mxe/usr/x86_64-w64-mingw32.static/include/qt5/QtWidgets \
+          -I/usr/src/mxe/usr/x86_64-w64-mingw32.static/include/qt5/QtGui \
+          -I/usr/src/mxe/usr/x86_64-w64-mingw32.static/include/qt5/QtCore \
+          main.cpp mainwindow.cpp login.cpp registration.cpp database.cpp \
+          adminwindow.cpp employeeswindow.cpp masterwindow.cpp ownerwindow.cpp \
+          workwindow.cpp financewindow.cpp payrollwindow.cpp salarywindow.cpp \
+          schedulewindow.cpp financeswindow.cpp loginwindow.cpp \
+          -o CliX.exe \
+          -L/usr/src/mxe/usr/x86_64-w64-mingw32.static/lib \
+          -lqtmain -lQt5Widgets -lQt5Gui -lQt5Core -lstdc++ -lgcc -lpthread
         
-    - name: Build with available tools
-      run: |
-        # Check what compilers are available
-        ls /usr/src/mxe/usr/bin/*g++* || echo "No g++ found"
-        
-        # Try direct compilation as fallback
-        echo "Checking available tools..."
-        /usr/src/mxe/usr/bin/x86_64-w64-mingw32.static-g++ --version || echo "g++ not working"
-        
-    - name: Upload project files for debugging
+    - name: Upload Standalone EXE
       uses: actions/upload-artifact@v4
       with:
-        name: Project-Source
-        path: |
-          *.pro
-          *.cpp
-          *.h
+        name: CliX-Standalone-Windows
+        path: CliX.exe
