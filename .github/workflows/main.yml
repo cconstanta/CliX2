@@ -5,37 +5,34 @@ on: [push, workflow_dispatch]
 jobs:
   build-windows:
     runs-on: ubuntu-latest
-    container: 
-      image: dockcross/windows-static-x64
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Install build dependencies
+    - name: Install MXE with Qt5
       run: |
-        # Установим необходимые библиотеки для статической сборки
-        apt-get update
-        apt-get install -y pkg-config
+        sudo apt-get update
+        sudo apt-get install -y \
+            git make autoconf automake autopoint bash bison bzip2 \
+            flex g++ g++-multilib gettext git gperf intltool \
+            libc6-dev-i386 libgdk-pixbuf2.0-dev libltdl-dev \
+            libssl-dev libtool-bin libxml-parser-perl lzip \
+            make openssl p7zip-full patch perl python3 python3-mako \
+            ruby sed unzip wget xz-utils
+            
+        git clone https://github.com/mxe/mxe.git
+        cd mxe
+        # Собираем только необходимые пакеты
+        make qtbase -j4 MXE_TARGETS=x86_64-w64-mingw32.static
         
-    - name: Manual Qt static compilation
+    - name: Compile with qmake
       run: |
-        # Прямая компиляция со статическими библиотеками Qt
-        /usr/src/mxe/usr/bin/x86_64-w64-mingw32.static-g++ \
-          -std=c++11 -O2 -static \
-          -I/usr/src/mxe/usr/x86_64-w64-mingw32.static/include/qt5 \
-          -I/usr/src/mxe/usr/x86_64-w64-mingw32.static/include/qt5/QtWidgets \
-          -I/usr/src/mxe/usr/x86_64-w64-mingw32.static/include/qt5/QtGui \
-          -I/usr/src/mxe/usr/x86_64-w64-mingw32.static/include/qt5/QtCore \
-          main.cpp mainwindow.cpp login.cpp registration.cpp database.cpp \
-          adminwindow.cpp employeeswindow.cpp masterwindow.cpp ownerwindow.cpp \
-          workwindow.cpp financewindow.cpp payrollwindow.cpp salarywindow.cpp \
-          schedulewindow.cpp financeswindow.cpp loginwindow.cpp \
-          -o CliX.exe \
-          -L/usr/src/mxe/usr/x86_64-w64-mingw32.static/lib \
-          -lqtmain -lQt5Widgets -lQt5Gui -lQt5Core -lstdc++ -lgcc -lpthread
+        export PATH=$(pwd)/mxe/usr/bin:$PATH
+        x86_64-w64-mingw32.static-qmake-qt5 CliX.pro
+        make -j4
         
     - name: Upload Standalone EXE
       uses: actions/upload-artifact@v4
       with:
         name: CliX-Standalone-Windows
-        path: CliX.exe
+        path: release/CliX.exe
