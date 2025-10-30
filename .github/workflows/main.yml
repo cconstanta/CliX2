@@ -1,0 +1,32 @@
+name: Build Windows EXE
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Qt
+      uses: jurplel/setup-qt-action@v3
+      with:
+        version: '6.5.0'
+        
+    - name: Build Project
+      run: |
+        qmake CliX.pro
+        mingw32-make release
+        
+    - name: Deploy dependencies
+      run: |
+        windeployqt --release release/CliX.exe
+        
+    - name: Upload Windows EXE
+      uses: actions/upload-artifact@v4
+      with:
+        name: CliX-Windows
+        path: |
+          release/CliX.exe
+          release/*.dll
