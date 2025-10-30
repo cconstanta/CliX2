@@ -10,9 +10,9 @@ jobs:
       uses: actions/checkout@v4
       
     - name: Setup Qt
-      uses: jurplel/setup-qt-action@v3
+      uses: actions/setup-qt@v1
       with:
-        version: '6.5.0'
+        qt-version: '6.5.0'
         
     - name: Build Project
       run: |
